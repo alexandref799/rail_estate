@@ -1,1 +1,6 @@
 raw_data/
+*.ipynb
+*.csv
+*.gz
+notebooks/
+.env
