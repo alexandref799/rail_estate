@@ -39,7 +39,9 @@ preprocessor = ColumnTransformer(
 #                        ("regressor", LinearRegression())])
 
 # ----- Exemple d’utilisation seule du préprocesseur -----
-def preprocess_df(df: pd.DataFrame) -> pd.DataFrame:
+
+
+def preprocess_df(df: pd.DataFrame):
     """Applique label encoding + robust scaler comme dans ton Excel."""
     X_trans = preprocessor.fit_transform(df)
     # On récupère un DataFrame propre avec les mêmes noms de colonnes
@@ -47,5 +49,8 @@ def preprocess_df(df: pd.DataFrame) -> pd.DataFrame:
     df_trans = pd.DataFrame(X_trans, columns=cols_out, index=df.index)
     return df_trans
 
+
+
+
 # Exemple :
-# df_prep = preprocess_df(df)
+#df_prep = preprocess_df(df)
