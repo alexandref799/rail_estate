@@ -8,18 +8,18 @@ import joblib
 # 1. Load your engineered dataframe
 # ---------------------------------------------------
 
-def model():
+def model(encoded_data):
 
     from mllogic.encoder import preprocess_df
     import pandas as pd
 
-    url = "mllogic/Output feature engineering - Copie de feat_eng.csv"
+    # url = "mllogic/Output feature engineering - Copie de feat_eng.csv"
 
-    data_engineered = pd.read_csv(url)
+    # data_engineered = pd.read_csv(url)
 
-    encoded_data = preprocess_df(data_engineered)
+    # encoded_data = preprocess_df(data_engineered)
 
-    encoded_data
+    # encoded_data
 
 
     # Target
@@ -80,4 +80,4 @@ def model():
     print(f"R²  : {r2:.3f}")
 
 
-    return model
+    return model, mae, rmse, r2, y_pred
