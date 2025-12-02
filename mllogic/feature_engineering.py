@@ -73,11 +73,16 @@ def add_gps_coordinates(df_dvf_clean, df_ban_clean):
     # -------------------------------------------------------------
     # 3. Merge avec BAN
     # -------------------------------------------------------------
-    df_geo = df_dvf_clean.merge(df_ban_clean, on="adresse_complete", how="inner")
+    df_dvf_gps = df_dvf_clean.merge(df_ban_clean, on="adresse_complete", how="inner")
 
-    print("GPS coverage :", 1 - df_geo[["lon", "lat"]].isna().mean())
+    df_dvf_gps = df_dvf_gps.drop(columns=['No voie', 'Type de voie', 'Voie', 'Code postal', 'Commune',
+       'Code departement', 'Code commune', 'type_voie_expanded', 'numero_x',
+       'nom_voie_x', 'code_postal_x', 'adresse_complete', 'numero_y',
+       'nom_voie_y', 'code_postal_y', 'nom_commune'])
 
-    return df_geo
+    print("GPS coverage :", 1 - df_dvf_gps[["lon", "lat"]].isna().mean())
+
+    return df_dvf_gps
 
 # ------------------------------------------------------------
 # 2. Trouver la gare la plus proche via BallTree
@@ -89,53 +94,49 @@ def find_nearest_station(df_dvf_gps: pd.DataFrame, df_gares: pd.DataFrame) -> pd
     RETURN → df_dvf_gps_gare
     """
 
-    df = df_dvf_gps.copy()
-
     # Stations coords
     gares_coords = np.radians(df_gares[["latitude", "longitude"]].values)
 
     tree = BallTree(gares_coords, metric="haversine")
 
     # DVF coords
-    dvf_coords = np.radians(df[["lat", "lon"]].values)
+    dvf_coords = np.radians(df_dvf_gps[["lat", "lon"]].values)
 
     dist, idx = tree.query(dvf_coords, k=1)
     dist_km = dist.flatten() * 6371  # Earth radius km
 
-    df["distance_gare_km"] = dist_km
-    df["nearest_gare"] = df_gares.iloc[idx.flatten()]["nom_gare"].values
+    df_dvf_gps["distance_gare_km"] = dist_km
+    df_dvf_gps["nearest_gare"] = df_gares.iloc[idx.flatten()]["nom_gare"].values
 
     # Merge infos gares
-    df = df.merge(
+    df_dvf_gps_gare = df_dvf_gps.merge(
         df_gares[["nom_gare", "date_signature", "date_ouverture"]],
         left_on="nearest_gare",
         right_on="nom_gare",
         how="left"
     ).drop(columns=["nom_gare"])
 
-    return df
+    return df_dvf_gps_gare
 
 # ------------------------------------------------------------
 # 3. Relative years (signature & ouverture)
 # ------------------------------------------------------------
 
-def compute_relative_years(df: pd.DataFrame) -> pd.DataFrame:
+def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
     """
     Ajoute deux colonnes :
     - relative_signature : année DVF - année signature
     - relative_opening   : année DVF - année d’ouverture
     """
 
-    df_clean = df.copy()
+    df_dvf_gps_gare["annee"] = pd.to_datetime(df_dvf_gps_gare["Date mutation"]).dt.year
+    df_dvf_gps_gare["year_signature"] = pd.to_datetime(df_dvf_gps_gare["date_signature"]).dt.year
+    df_dvf_gps_gare["year_opening"] = pd.to_datetime(df_dvf_gps_gare["date_ouverture"]).dt.year
 
-    df_clean["annee"] = pd.to_datetime(df_clean["Date mutation"]).dt.year
-    df_clean["year_signature"] = pd.to_datetime(df_clean["date_signature"]).dt.year
-    df_clean["year_opening"] = pd.to_datetime(df_clean["date_ouverture"]).dt.year
+    df_dvf_gps_gare["relative_signature"] = df_dvf_gps_gare["annee"] - df_dvf_gps_gare["year_signature"]
+    df_dvf_gps_gare["relative_opening"] = df_dvf_gps_gare["annee"] - df_dvf_gps_gare["year_opening"]
 
-    df_clean["relative_signature"] = df_clean["annee"] - df_clean["year_signature"]
-    df_clean["relative_opening"] = df_clean["annee"] - df_clean["year_opening"]
-
-    return df_clean
+    return df_dvf_gps_gare
 
 # ------------------------------------------------------------
 # 4. Drop multicolinéarité
@@ -147,7 +148,7 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     ['Date mutation', 'annee', 'Valeur fonciere']
     """
 
-    cols_to_drop = ["Date mutation", "annee", "Valeur fonciere"]
+    cols_to_drop = ["Date mutation", "annee", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening']
     df_clean = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
 
     return df_clean
@@ -181,3 +182,4 @@ def run_feature_engineering(df_dvf, df_gares, df_ban):
 
     print("✅ Feature engineering terminé.")
     return df4
+
