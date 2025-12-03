@@ -15,16 +15,7 @@ def model(X_train, X_test, y_train, y_test):
 
 
 
-    # ---------------------------------------------------
-    # 2. Train/test split
-    # ---------------------------------------------------
-
-#X_train, X_test, y_train, y_test = train_test_split(
-#X, y,
-#test_size=0.2,
-#random_state=42,)
-
-def model(X_train, X_test, y_train, y_test):
+def search(X_train, X_test, y_train, y_test, n_estimators= [500], learning_rate=[0.05], max_depth= [8], subsample = [0.7], colsample= [0.8] ):
 
     # 3. XGBoost model definition
 
@@ -33,17 +24,18 @@ def model(X_train, X_test, y_train, y_test):
         n_jobs=-1,
         tree_method="hist",   # fast on CPU
     )
-
+    #Paramgrid
 
     param_grid = {
-        "n_estimators": [200, 500, 800],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "max_depth": [4, 6, 8],
-        "subsample": [0.7, 0.8, 1.0],
-        "colsample_bytree": [0.7, 0.8, 1.0],
+        "n_estimators": n_estimators,
+        "learning_rate": learning_rate,
+        "max_depth": max_depth,
+        "subsample": subsample,
+        "colsample_bytree": colsample,
 }
+    #implemeentation of the model & Param grid
 
-    search = RandomizedSearchCV(
+    search_CV = RandomizedSearchCV(
         model,
         param_grid
         )
@@ -52,16 +44,21 @@ def model(X_train, X_test, y_train, y_test):
     # 4. Train the model
 
     print("Training XGBoost...")
-    search.fit(X_train, y_train)
+    Fited_search = search_CV.fit(X_train, y_train)
+
+
+    best_model = Fited_search.best_estimator_
 
 
     # 5. Evaluation
 
-    y_pred = model.predict(X_test)
+    y_pred = best_model.predict(X_test)
 
     mae = mean_absolute_error(y_test, y_pred)
     rmse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
+
+    results_model = {"mae": mae, "rmse": rmse, "r2": r2}
 
     print("\n=== Evaluation Metrics ===")
     print(f"MAE : {mae:.3f}")
@@ -69,4 +66,4 @@ def model(X_train, X_test, y_train, y_test):
     print(f"R²  : {r2:.3f}")
 
 
-    return model, mae, rmse, r2, y_pred
+    return best_model, results_model, Fited_search.best_params_, y_pred
