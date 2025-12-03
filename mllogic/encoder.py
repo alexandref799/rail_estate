@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import RobustScaler, OrdinalEncoder
+from sklearn.preprocessing import RobustScaler, OrdinalEncoder, MinMaxScaler
 from sklearn.pipeline import Pipeline
 
 # Colonnes de ton Excel
@@ -30,6 +30,7 @@ preprocessor = ColumnTransformer(
         ),
         # robust scaler pour les colonnes numériques
         ("num", RobustScaler(), num_cols),
+        ("minmax", MinMaxScaler(), 'annee')
     ]
 )
 

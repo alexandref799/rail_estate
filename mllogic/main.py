@@ -1,6 +1,7 @@
 from load_data import load_dvf_gare, list_uris_in_bucket, load_ban
 from clean_data import clean_data_transactions, clean_data_gares, clean_data_ban
-from feature_engineering import 
+from feature_engineering import run_feature_engineering
+from train_test import train_test_split_strict_chrono
 from encoder import preprocess_df
 from model import model 
 
@@ -14,13 +15,14 @@ df_gare_clean = clean_data_gares(df_gare)
 df_ban_clean = clean_data_ban(df_ban)
 
 # Feature engineering
-df_dvf_gps = feat(df_dvf_clean)
-df_dvf_gps_gare = feat(df_dvf_gps)
-df_dvf_gps_gare_relative_years = feat(df_dvf_gps_gare)
-df_merge = merge(all datas)
+df_merge = run_feature_engineering(df_dvf_clean, df_gare_clean, df_ban_clean)
+
+# Test train split
+X_train, X_test, y_train, y_test = train_test_split_strict_chrono(df_merge, date_col="annee", min_year=2014, max_year=2018, test_size = 0.2)
 
 # Encoding & preprocessing
-df_encoded = preprocess_df(df_merge)
-
+X_train_encoded = preprocess_df(X_train)
+X_test_encoded = preprocess_df(X_test)
+   
 # Model 0
-model, mae, rmse, r2, y_pred = model(df_encoded)
+model, mae, rmse, r2, y_pred = model(X_train_encoded, X_test_encoded, y_train, y_test)
