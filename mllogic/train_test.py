@@ -1,19 +1,31 @@
-#Je veux train test split en gardant un aspect chronologique
 from sklearn.model_selection import train_test_split
 
-def train_test_split_chrono(df, date_col, test_size=0.2):
-    # Trier le DataFrame par la colonne de date
-    df_sorted = df.sort_values(by=date_col)
 
-    # Calculer l'index de séparation
-    split_index = int(len(df_sorted) * (1 - test_size))
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
-    # Diviser le DataFrame en ensembles d'entraînement et de test
-    train_df = df_sorted.iloc[:split_index]
-    test_df = df_sorted.iloc[split_index:]
+def train_test_split_final(
+    df: pd.DataFrame,
+    min_year: int,
+    max_year: int,
+    test_size: float = 0.2,
+    random_state: int = 42
+):
 
-    return train_df, test_df
-# Exemple d'utilisation :
-# train_df, test_df = train_test_split_chrono(df, date_col='date_column
+    df= df[
+        (df['annee'].dt.year >= min_year) &
+        (df['annee'].dt.year <= max_year)
+    ]
+    y = df["prix_m2"] # Target (cible)
+    X = df.drop(columns=["prix_m2"]) # Features (variables explicatives)
 
+    # 3. Split Classique (Aléatoire)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state
+    )
 
+    # 4. Retour des quatre jeux de données
+    return X_train, X_test, y_train, y_test
