@@ -4,10 +4,10 @@ import glob
 import unicodedata
 
 def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
-    
+
     cols_to_keep = ['numero','nom_voie','code_postal','nom_commune','lon','lat' ]
     df_ban_clean = df[cols_to_keep]
-    
+
     return df_ban_clean
 
 def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
@@ -88,8 +88,12 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     df["annee"] = df["Date mutation"].dt.year
 
     # Filter residential properties only
-    allowed_types = ["Appartement", "Maison"]
-    df = df[df["Type local"].isin(allowed_types)]
+    allowed_local_types = ["Appartement", "Maison"]
+    df = df[df["Type local"].isin(allowed_local_types)]
+
+    ####### Filter ventes classiques
+    allowed_mutation_types = ["Vente", "Vente en l'état futur d'achèvement"]
+    df = df[df["Nature mutation"].isin(allowed_mutation_types)]
 
     #Remove anomalies
     df = df[df["Valeur fonciere"] > 1000]  # eliminate invalid values
@@ -105,8 +109,9 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
 
     cols_to_keep = [
     "Date mutation",
-    "Nature mutation",
     "annee",
+    "Nature mutation",
+    "Type local",
     "Valeur fonciere",
     "Surface reelle bati",
     "prix_m2",
@@ -124,18 +129,17 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
 
     return df_clean
 
-
 def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean raw data by 
+    Clean raw data by
     - Clean geo point -> lat / lon
-    - Normalize and rename columns  
+    - Normalize and rename columns
     - Remove anomalies
-    - Keep only useful columns 
+    - Keep only useful columns
     """
-    
+
     # Clean geo point and transform in lat / lon
-    
+
     def extract_lat_lon(geo):
         try:
             lat, lon = geo.split(",")
@@ -144,9 +148,9 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
             return None, None
 
     df["latitude"], df["longitude"] = zip(*df["Geo Point"].apply(extract_lat_lon))
-    
+
     # Normalize & rename columns
-    
+
     df_gares = df.rename(columns={
     "LIBELLE": "nom_gare",
     "CONNEX": "interconnexion",
@@ -156,7 +160,7 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     df_gares.columns = df_gares.columns.str.lower()  # tout en minuscule
-    
+
     # Clean interconexion
     df_gares["interconnexion"] = (
     df_gares["interconnexion"]
@@ -164,16 +168,16 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
     .str.lower()
     .map({"interconnexion": "oui", "non": "non"})
     )
-    
+
     # Parse dates
     for col in ["date_signature", "date_ouverture"]:
         df_gares[col] = pd.to_datetime(df_gares[col], errors="coerce")
-        
-    # Clean spaces    
+
+    # Clean spaces
     df_gares["ligne_clean"] = df_gares["lignes"].str.replace(" ", "", regex=False)
 
     # Selection des colonnes
-    
+
     colonnes_finales = [
         "nom_gare",
         "latitude",
@@ -182,10 +186,9 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
         "ligne_clean",
         "date_signature",
         "date_ouverture",
-    ] 
-    
-    df_gares_clean = df_gares[colonnes_finales].copy()
-    
-    return df_gares_clean
+    ]
 
+    df_gares_clean = df_gares[colonnes_finales].copy()
+
+    return df_gares_clean
 
