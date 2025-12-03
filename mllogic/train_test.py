@@ -26,8 +26,8 @@ def train_test_split_strict_chrono(
 
     # 1. Filtrage Chronologique par Année
     df_filtered = df[
-        (df[date_col].dt.year >= min_year) &
-        (df[date_col].dt.year <= max_year)
+        (df[date_col] >= min_year) &
+        (df[date_col] <= max_year)
     ].copy()
 
     print(f"✅ Données filtrées de {min_year} à {max_year}. Total: {len(df_filtered):,} lignes.")
@@ -38,7 +38,6 @@ def train_test_split_strict_chrono(
 
     # 2. Tri strict par date (NÉCESSAIRE pour le split chronologique)
     df_sorted = df_filtered.sort_values(by=date_col).reset_index(drop=True)
-
     # 3. Calculer l'index de séparation
     # split_index = 80% des données (le passé)
     split_index = int(len(df_sorted) * (1 - test_size))
