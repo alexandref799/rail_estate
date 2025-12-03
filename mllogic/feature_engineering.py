@@ -85,6 +85,7 @@ def add_gps_coordinates(df_dvf_clean, df_ban_clean):
 
     return df_dvf_gps
 
+
 # ------------------------------------------------------------
 # 2. Trouver la gare la plus proche via BallTree
 # ------------------------------------------------------------
@@ -140,7 +141,50 @@ def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
     return df_dvf_gps_gare
 
 # ------------------------------------------------------------
-# 4. Drop multicolinéarité
+# 4. Ajout des taux d'intérêts moyen
+# ------------------------------------------------------------
+
+def add_interest_rate(df_dvf: pd.DataFrame, df_taux: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute au dataframe DVF une colonne 'taux_moyen' via un lookup sur l'année.
+
+    Paramètres
+    ----------
+    df_dvf : pd.DataFrame
+        Transactions DVF (doit contenir une colonne 'annee')
+    df_taux : pd.DataFrame
+        DataFrame des taux d'intérêt (colonnes : 'annee', 'taux_moyen')
+
+    Retour
+    ------
+    pd.DataFrame
+        df_dvf enrichi avec la colonne 'taux_moyen'
+    """
+
+    # Sécurité : colonnes obligatoires
+    if "annee" not in df_dvf.columns:
+        raise KeyError("df_dvf must contain a column named 'annee'.")
+    if not {"annee", "taux_moyen"}.issubset(df_taux.columns):
+        raise KeyError("df_taux must contain columns ['annee', 'taux_moyen'].")
+
+    df_taux_clean = df_taux.copy()
+    df_taux_clean["annee"] = df_taux_clean["annee"].astype(int)
+
+    # Merge left
+    df_dvf_enriched = df_dvf.merge(
+        df_taux_clean,
+        how="left",
+        on="annee"
+    )
+
+    # Vérifie le taux manquant
+    missing_rate = df_dvf_enriched["taux_moyen"].isna().mean()
+    print(f"[INFO] Missing taux_moyen after merge : {missing_rate:.2%}")
+
+    return df_dvf_enriched
+
+# ------------------------------------------------------------
+# 5. Drop multicolinéarité
 # ------------------------------------------------------------
 
 def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
@@ -155,16 +199,17 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 # ------------------------------------------------------------
-# 5. Pipeline complet (à appeler depuis train.py)
+# 6. Pipeline complet (à appeler depuis train.py)
 # ------------------------------------------------------------
 
-def run_feature_engineering(df_dvf, df_gares, df_ban):
+def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux):
     """
     Enchaîne :
     1. Ajout GPS
     2. Gare la plus proche
-    3. Relative years
-    4. Nettoyage final
+    3. Relative years (signature & ouverture)
+    4. Ajout des taux d’intérêt (lookup YoY)
+    5. Nettoyage (drop multicolinéarité)
 
     RETURN → df_final prêt pour modèle
     """
@@ -172,14 +217,19 @@ def run_feature_engineering(df_dvf, df_gares, df_ban):
     print("📍 Ajout des coordonnées GPS...")
     df1 = add_gps_coordinates(df_dvf, df_ban)
 
-    print("🚇 Calcul gare la plus proche...")
+    print("🚉 Calcul de la gare la plus proche...")
     df2 = find_nearest_station(df1, df_gares)
 
-    print("⏳ Ajout des relative years...")
+    print("⏳ Ajout des relative years (signature / ouverture)...")
     df3 = compute_relative_years(df2)
 
+    print("📈 Ajout du taux moyen (lookup sur l'année)...")
+    df4 = add_interest_rate(df3, df_taux)
+
     print("🧹 Drop multicolinéarité...")
-    df4 = drop_multicollinearity(df3)
+    df5 = drop_multicollinearity(df4)
 
     print("✅ Feature engineering terminé.")
-    return df4
+    return df5
+
+
