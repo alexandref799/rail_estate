@@ -4,14 +4,14 @@ from sklearn.preprocessing import RobustScaler, OrdinalEncoder
 from sklearn.pipeline import Pipeline
 
 # Colonnes de ton Excel
-cat_cols = ["Nature mutation"]
+cat_cols = ["Nature mutation","Type local"]
 num_cols = [
     "Surface reelle bati",
     "prix_m2",
     "Nombre pieces principales",
     "lon",
     "lat",
-    "distance_gare_0",
+    "distance_gare_km",
     "relative_year_signature",
     "relative_year_opening",
 ]
