@@ -3,41 +3,27 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
 import joblib
+from sklearn.model_selection import RandomizedSearchCV
 
 # ---------------------------------------------------
 # 1. Load your engineered dataframe
 # ---------------------------------------------------
 
-def model(encoded_data):
+def model(X_train, X_test, y_train, y_test):
 
     from mllogic.encoder import preprocess_df
     import pandas as pd
 
-    # url = "mllogic/Output feature engineering - Copie de feat_eng.csv"
-
-    # data_engineered = pd.read_csv(url)
-
-    # encoded_data = preprocess_df(data_engineered)
-
-    # encoded_data
-
-
-    # Target
-    y = encoded_data["prix_m2"]
-
-    # Features = all columns except target
-    X = encoded_data.drop(columns=["prix_m2"])
 
 
     # ---------------------------------------------------
     # 2. Train/test split
     # ---------------------------------------------------
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=0.2,
-        random_state=42,
-    )
+#X_train, X_test, y_train, y_test = train_test_split(
+#X, y,
+#test_size=0.2,
+#random_state=42,)
 
 
     # ---------------------------------------------------
@@ -45,23 +31,31 @@ def model(encoded_data):
     # ---------------------------------------------------
 
     model = XGBRegressor(
-        n_estimators=500,
-        learning_rate=0.05,
-        max_depth=6,
-        subsample=0.8,
-        colsample_bytree=0.8,
         objective="reg:squarederror",
         n_jobs=-1,
         tree_method="hist",   # fast on CPU
     )
 
 
+    param_grid = {
+        "n_estimators": [200, 500, 800],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "max_depth": [4, 6, 8],
+        "subsample": [0.7, 0.8, 1.0],
+        "colsample_bytree": [0.7, 0.8, 1.0],
+}
+
+    search = RandomizedSearchCV(
+        model,
+        param_grid
+        )
+
     # ---------------------------------------------------
     # 4. Train the model
     # ---------------------------------------------------
 
     print("Training XGBoost...")
-    model.fit(X_train, y_train)
+    search.fit(X_train, y_train)
 
 
     # ---------------------------------------------------
