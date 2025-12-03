@@ -8,6 +8,7 @@ seaborn # Essentiel pour les graphiques statistiques avancés
 scikit-learn # Pour les métriques, preprocessing, et les modèles de base (si besoin)
 tensorflow # Cœur du deep learning
 keras # L'API haut niveau de TensorFlow
+xgboost # Model 0
 
 # --- Cloud et I/O de Données (Google Cloud Storage) ---
 google-cloud-storage # Pour l'interaction directe avec l'API GCS

@@ -3,18 +3,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
 import joblib
-from mllogic.encoder import preprocess_df
 import pandas as pd
 
-# ---------------------------------------------------
 # 1. Load your engineered dataframe
-# ---------------------------------------------------
 
 def model(X_train, X_test, y_train, y_test):
 
-    # ---------------------------------------------------
     # 3. XGBoost model definition
-    # ---------------------------------------------------
 
     model = XGBRegressor(
         n_estimators=500,
@@ -28,17 +23,13 @@ def model(X_train, X_test, y_train, y_test):
     )
 
 
-    # ---------------------------------------------------
     # 4. Train the model
-    # ---------------------------------------------------
 
     print("Training XGBoost...")
     model.fit(X_train, y_train)
 
 
-    # ---------------------------------------------------
     # 5. Evaluation
-    # ---------------------------------------------------
 
     y_pred = model.predict(X_test)
 
