@@ -70,6 +70,7 @@ def add_gps_coordinates(df_dvf_clean, df_ban_clean):
 
     df_ban_clean["adresse_complete"] = df_ban_clean["numero"].astype(str) + " " + df_ban_clean["nom_voie"].astype(str) + " " + df_ban_clean["code_postal"].astype(str)
     df_ban_clean["adresse_complete"] = df_ban_clean["adresse_complete"].str.upper()
+
     # -------------------------------------------------------------
     # 3. Merge avec BAN
     # -------------------------------------------------------------
@@ -145,10 +146,10 @@ def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
 def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     """
     Supprime les colonnes redondantes :
-    ['Date mutation', 'annee', 'Valeur fonciere']
+    ['Date mutation', 'Valeur fonciere']
     """
 
-    cols_to_drop = ["Date mutation", "annee", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening']
+    cols_to_drop = ["Date mutation", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening']
     df_clean = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
 
     return df_clean
@@ -182,4 +183,3 @@ def run_feature_engineering(df_dvf, df_gares, df_ban):
 
     print("✅ Feature engineering terminé.")
     return df4
-

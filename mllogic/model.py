@@ -5,7 +5,6 @@ from xgboost import XGBRegressor
 import joblib
 from sklearn.model_selection import RandomizedSearchCV
 
-# ---------------------------------------------------
 # 1. Load your engineered dataframe
 # ---------------------------------------------------
 
@@ -25,10 +24,9 @@ def model(X_train, X_test, y_train, y_test):
 #test_size=0.2,
 #random_state=42,)
 
+def model(X_train, X_test, y_train, y_test):
 
-    # ---------------------------------------------------
     # 3. XGBoost model definition
-    # ---------------------------------------------------
 
     model = XGBRegressor(
         objective="reg:squarederror",
@@ -52,15 +50,12 @@ def model(X_train, X_test, y_train, y_test):
 
     # ---------------------------------------------------
     # 4. Train the model
-    # ---------------------------------------------------
 
     print("Training XGBoost...")
     search.fit(X_train, y_train)
 
 
-    # ---------------------------------------------------
     # 5. Evaluation
-    # ---------------------------------------------------
 
     y_pred = model.predict(X_test)
 

@@ -1,19 +1,18 @@
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import RobustScaler, OrdinalEncoder
+from sklearn.preprocessing import RobustScaler, OrdinalEncoder, MinMaxScaler
 from sklearn.pipeline import Pipeline
 
 # Colonnes de ton Excel
 cat_cols = ["Nature mutation","Type local"]
 num_cols = [
     "Surface reelle bati",
-    "prix_m2",
     "Nombre pieces principales",
     "lon",
     "lat",
     "distance_gare_km",
-    "relative_year_signature",
-    "relative_year_opening",
+    "relative_signature",
+    "relative_opening",
 ]
 
 # ----- Définition du préprocesseur -----
@@ -30,6 +29,7 @@ preprocessor = ColumnTransformer(
         ),
         # robust scaler pour les colonnes numériques
         ("num", RobustScaler(), num_cols),
+        ("minmax", MinMaxScaler(), ['annee'])
     ]
 )
 
@@ -45,7 +45,7 @@ def preprocess_df(df: pd.DataFrame):
     """Applique label encoding + robust scaler comme dans ton Excel."""
     X_trans = preprocessor.fit_transform(df)
     # On récupère un DataFrame propre avec les mêmes noms de colonnes
-    cols_out = cat_cols + num_cols
+    cols_out = cat_cols + num_cols + ['annee']
     df_trans = pd.DataFrame(X_trans, columns=cols_out, index=df.index)
     return df_trans
 
