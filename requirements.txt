@@ -1,0 +1,18 @@
+# --- Manipulation et Visualisation des Données ---
+pandas
+numpy
+matplotlib
+seaborn # Essentiel pour les graphiques statistiques avancés
+
+# --- Machine Learning / Deep Learning ---
+scikit-learn # Pour les métriques, preprocessing, et les modèles de base (si besoin)
+tensorflow # Cœur du deep learning
+keras # L'API haut niveau de TensorFlow
+
+# --- Cloud et I/O de Données (Google Cloud Storage) ---
+google-cloud-storage # Pour l'interaction directe avec l'API GCS
+gcsfs # Permet à Pandas/Dask de lire nativement les URIs gs://
+
+# --- Utilitaires de Projet (Optionnel mais très utile) ---
+python-dotenv # Pour lire votre fichier .env (BUCKET_NAME, URI_DVF, etc.)
+tqdm # Pour les barres de progression lors des boucles/chargements lourds
