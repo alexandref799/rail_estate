@@ -98,14 +98,15 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     #Remove anomalies
     df = df[df["Valeur fonciere"] > 1000]  # eliminate invalid values
     df = df[df["Surface reelle bati"] > 8]  # eliminate caves / erreurs
-    df = df[df["Surface reelle bati"] < 500]  # remove mansions / errors
+    df = df[df["Surface reelle bati"] < 300]  # remove mansions / errors
+    df = df[df['Nombre pieces principales'] < 10]  # remove human errors
 
     ## Create price/m2
     df["prix_m2"] = df["Valeur fonciere"] / df["Surface reelle bati"]
 
     ## Remove abnormal price/m²
-    df = df[df["prix_m2"] > 500]       # avoid garages
-    df = df[df["prix_m2"] < 20000]     # avoid aberrations
+    df = df[df["prix_m2"] > 1000]       # avoid garages
+    df = df[df["prix_m2"] < 18000]     # avoid aberrations
 
     cols_to_keep = [
     "Date mutation",
@@ -191,4 +192,3 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
     df_gares_clean = df_gares[colonnes_finales].copy()
 
     return df_gares_clean
-
