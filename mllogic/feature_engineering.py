@@ -85,7 +85,6 @@ def add_gps_coordinates(df_dvf_clean, df_ban_clean):
 
     return df_dvf_gps
 
-
 # ------------------------------------------------------------
 # 2. Trouver la gare la plus proche via BallTree
 # ------------------------------------------------------------
@@ -146,45 +145,114 @@ def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
 
 def add_interest_rate(df_dvf: pd.DataFrame, df_taux: pd.DataFrame) -> pd.DataFrame:
     """
-    Ajoute au dataframe DVF une colonne 'taux_moyen' via un lookup sur l'année.
+    Ajoute les colonnes 'taux', 'variation_mom', 'variation_yoy' au DF DVF
+    via un merge sur 'annee' + 'mois'.
 
     Paramètres
     ----------
     df_dvf : pd.DataFrame
-        Transactions DVF (doit contenir une colonne 'annee')
+        DataFrame DVF contenant au minimum 'annee' et 'mois'
+
     df_taux : pd.DataFrame
-        DataFrame des taux d'intérêt (colonnes : 'annee', 'taux_moyen')
+        DataFrame des taux mensuels contenant :
+        ['annee', 'mois', 'taux', 'variation_mom', 'variation_yoy']
 
     Retour
     ------
     pd.DataFrame
-        df_dvf enrichi avec la colonne 'taux_moyen'
+        DataFrame DVF enrichi
     """
 
-    # Sécurité : colonnes obligatoires
-    if "annee" not in df_dvf.columns:
-        raise KeyError("df_dvf must contain a column named 'annee'.")
-    if not {"annee", "taux_moyen"}.issubset(df_taux.columns):
-        raise KeyError("df_taux must contain columns ['annee', 'taux_moyen'].")
+    # ---- Sécurité : colonnes obligatoires ----
+    required_dvf = {"annee", "mois"}
+    if not required_dvf.issubset(df_dvf.columns):
+        raise KeyError(f"df_dvf must contain columns {required_dvf}")
+
+    required_taux = {"annee", "mois", "taux", "variation_mom", "variation_yoy"}
+    if not required_taux.issubset(df_taux.columns):
+        raise KeyError(f"df_taux must contain columns {required_taux}")
+
+    # ---- Nettoyage : s'assurer que les clés sont des int ----
+    df_dvf_clean = df_dvf.copy()
+    df_dvf_clean["annee"] = df_dvf_clean["annee"].astype(int)
+    df_dvf_clean["mois"] = df_dvf_clean["mois"].astype(int)
 
     df_taux_clean = df_taux.copy()
     df_taux_clean["annee"] = df_taux_clean["annee"].astype(int)
+    df_taux_clean["mois"] = df_taux_clean["mois"].astype(int)
 
-    # Merge left
-    df_dvf_enriched = df_dvf.merge(
+    # ---- Merge ----
+    df_merged = df_dvf_clean.merge(
         df_taux_clean,
-        how="left",
-        on="annee"
+        on=["annee", "mois"],
+        how="left"
     )
 
-    # Vérifie le taux manquant
-    missing_rate = df_dvf_enriched["taux_moyen"].isna().mean()
-    print(f"[INFO] Missing taux_moyen after merge : {missing_rate:.2%}")
+    # ---- Monitoring du taux de merge ----
+    missing_rate = df_merged["taux"].isna().mean()
+    print(f"[INFO] Missing taux after merge : {missing_rate:.2%}")
 
-    return df_dvf_enriched
+    return df_merged
 
 # ------------------------------------------------------------
-# 5. Drop multicolinéarité
+# 5. Ajout des features de l'insee
+# ------------------------------------------------------------
+
+def add_insee_features(df_dvf: pd.DataFrame, df_insee: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute les features INSEE (revenus, démographie, logement, etc.)
+    à df_dvf_clean via la colonne 'Code ville'.
+
+    PARAMÈTRES
+    ----------
+    df_dvf : pd.DataFrame
+        DataFrame DVF contenant la colonne 'Code ville'
+    df_insee : pd.DataFrame
+        DataFrame INSEE contenant les colonnes :
+        - 'Code ville'
+        - toutes les features socio-éco
+
+    RETOUR
+    ------
+    pd.DataFrame enrichi avec toutes les colonnes INSEE
+    """
+
+    # ------------------------
+    # 1. Sécurités
+    # ------------------------
+    if "Code ville" not in df_dvf.columns:
+        raise KeyError("df_dvf must contain a column named 'Code ville'.")
+
+    if "Code ville" not in df_insee.columns:
+        raise KeyError("df_insee must contain a column named 'Code ville'.")
+
+    # On retire d'éventuels doublons côté INSEE
+    df_insee_clean = df_insee.drop_duplicates(subset=["Code ville"]).copy()
+
+    # On force les colonnes en string pour un merge propre
+    df_dvf["Code ville"] = df_dvf["Code ville"].astype(str)
+    df_insee_clean["Code ville"] = df_insee_clean["Code ville"].astype(str)
+
+    # ------------------------
+    # 2. Merge LEFT (on garde toutes les transactions)
+    # ------------------------
+    df_merged = df_dvf.merge(
+        df_insee_clean,
+        on="Code ville",
+        how="left"
+    )
+
+    # ------------------------
+    # 3. Monitoring qualité
+    # ------------------------
+    missing_rate = df_merged.isna().mean().mean()
+
+    print(f"[INFO] Merge INSEE terminé. Taux moyen de valeurs manquantes INSEE : {missing_rate:.2%}")
+
+    return df_merged
+
+# ------------------------------------------------------------
+# 6. Drop multicolinéarité
 # ------------------------------------------------------------
 
 def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
@@ -199,37 +267,33 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 # ------------------------------------------------------------
-# 6. Pipeline complet (à appeler depuis train.py)
+# 7. Pipeline complet (à appeler depuis train.py)
 # ------------------------------------------------------------
 
-def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux):
+def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
     """
-    Enchaîne :
-    1. Ajout GPS
-    2. Gare la plus proche
-    3. Relative years (signature & ouverture)
-    4. Ajout des taux d’intérêt (lookup YoY)
-    5. Nettoyage (drop multicolinéarité)
-
-    RETURN → df_final prêt pour modèle
+    Pipeline complet d'enrichissement des transactions DVF.
     """
 
     print("📍 Ajout des coordonnées GPS...")
-    df1 = add_gps_coordinates(df_dvf, df_ban)
+    df = add_gps_coordinates(df_dvf, df_ban)
 
     print("🚉 Calcul de la gare la plus proche...")
-    df2 = find_nearest_station(df1, df_gares)
+    df = find_nearest_station(df, df_gares)
 
-    print("⏳ Ajout des relative years (signature / ouverture)...")
-    df3 = compute_relative_years(df2)
+    print("📅 Ajout des relative years (signature / ouverture)...")
+    df = compute_relative_years(df)
 
-    print("📈 Ajout du taux moyen (lookup sur l'année)...")
-    df4 = add_interest_rate(df3, df_taux)
+    print("📈 Ajout du taux moyen (lookup sur année & mois)...")
+    df = add_interest_rate(df, df_taux)
+
+    print("🏙️ Ajout des données socio-éco INSEE...")
+    df = add_insee_features(df, df_insee)
 
     print("🧹 Drop multicolinéarité...")
-    df5 = drop_multicollinearity(df4)
+    df = drop_multicollinearity(df)
 
     print("✅ Feature engineering terminé.")
-    return df5
+    return df
 
 

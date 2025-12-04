@@ -1,7 +1,5 @@
 
 import pandas as pd
-import glob
-import unicodedata
 
 def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
 
@@ -9,7 +7,7 @@ def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
     df_ban_clean = df[cols_to_keep]
 
     return df_ban_clean
-
+    
 def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean raw data by
@@ -84,9 +82,9 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
         errors="coerce"
     )
 
-    ## Extract year
+    ## Extract columns
     df["annee"] = df["Date mutation"].dt.year
-    df['mois']= df["Date mutation"].dt.month
+    df['mois'] = df["Date mutation"].dt.month
 
     # Filter residential properties only
     allowed_local_types = ["Appartement", "Maison"]
@@ -109,6 +107,23 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df["prix_m2"] > 1000]       # avoid garages
     df = df[df["prix_m2"] < 18000]     # avoid aberrations
 
+    # --- Harmonisation "Commune" en lowercase ---
+    df["Commune"] = df["Commune"].astype(str).str.lower().str.strip()
+
+    # --- Correction des codes commune pour Paris ---
+    mask_paris = df["Commune"].str.contains("paris ")
+    df.loc[mask_paris, "Code commune"] = "056"   # règle DVF : Paris = 056
+
+    # --- Conversion en string + padding ---
+    df["Code departement"] = df["Code departement"].astype(str).str.zfill(2)
+    df["Code commune"] = df["Code commune"].astype(str).str.zfill(3)
+
+    # --- Création du Code ville ---
+    df["Code ville"] = df["Code departement"] + df["Code commune"]
+
+    # --- On affiche la nouvelle colonne ---
+    print(df["Code ville"].head())
+
     cols_to_keep = [
     "Date mutation",
     "annee",
@@ -125,7 +140,8 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     "Code postal",
     "Commune",
     "Code departement",
-    "Code commune"
+    "Code commune",
+    "Code ville"
     ]
 
     df_clean = df[cols_to_keep].copy()

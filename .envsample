@@ -1,0 +1,8 @@
+bucket_name=rail-estate-data
+uri_gares="gares/csv_gares.csv"
+uri_dvf="dvf/dvf_idf_2014_2025.csv"
+uri_metro="gares/donnees_metro_clean.csv"
+PREFIX_BAN="ban/"                     # Préfixe pour le dossier contenant les fichiers BAN multiples
+min_year=2014
+max_year=2020
+date_col='annee'
