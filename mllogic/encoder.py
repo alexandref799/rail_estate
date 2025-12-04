@@ -13,7 +13,15 @@ num_cols = [
     "distance_gare_km",
     "relative_signature",
     "relative_opening",
-]
+    "Revenu médian 2021",
+    'Évol. annuelle moy. de la population 2016-2022',
+    'Part proprio en rés. principales 2022',
+    'Part locataires HLM dans les rés. principales 2022',
+    'Part cadres sup. 2022',
+    'Part logements vacants 2022',
+    'Taux de chômage annuel moyen 2024',
+    'Part des élèves du privé parmi les élèves du second degré 2024',
+    "Nombre d'établissements 2023"]
 
 # ----- Définition du préprocesseur -----
 preprocessor = ColumnTransformer(
@@ -48,4 +56,3 @@ def preprocess_df(df: pd.DataFrame):
     cols_out = cat_cols + num_cols + ['annee'] + ['taux'] + ['variation_mom'] + ['variation_yoy']
     df_trans = pd.DataFrame(X_trans, columns=cols_out, index=df.index)
     return df_trans
-
