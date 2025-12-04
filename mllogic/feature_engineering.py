@@ -194,9 +194,65 @@ def add_interest_rate(df_dvf: pd.DataFrame, df_taux: pd.DataFrame) -> pd.DataFra
 
     return df_merged
 
+# ------------------------------------------------------------
+# 5. Ajout des features de l'insee
+# ------------------------------------------------------------
+
+def add_insee_features(df_dvf: pd.DataFrame, df_insee: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute les features INSEE (revenus, démographie, logement, etc.)
+    à df_dvf_clean via la colonne 'Code ville'.
+
+    PARAMÈTRES
+    ----------
+    df_dvf : pd.DataFrame
+        DataFrame DVF contenant la colonne 'Code ville'
+    df_insee : pd.DataFrame
+        DataFrame INSEE contenant les colonnes :
+        - 'Code ville'
+        - toutes les features socio-éco
+
+    RETOUR
+    ------
+    pd.DataFrame enrichi avec toutes les colonnes INSEE
+    """
+
+    # ------------------------
+    # 1. Sécurités
+    # ------------------------
+    if "Code ville" not in df_dvf.columns:
+        raise KeyError("df_dvf must contain a column named 'Code ville'.")
+
+    if "Code ville" not in df_insee.columns:
+        raise KeyError("df_insee must contain a column named 'Code ville'.")
+
+    # On retire d'éventuels doublons côté INSEE
+    df_insee_clean = df_insee.drop_duplicates(subset=["Code ville"]).copy()
+
+    # On force les colonnes en string pour un merge propre
+    df_dvf["Code ville"] = df_dvf["Code ville"].astype(str)
+    df_insee_clean["Code ville"] = df_insee_clean["Code ville"].astype(str)
+
+    # ------------------------
+    # 2. Merge LEFT (on garde toutes les transactions)
+    # ------------------------
+    df_merged = df_dvf.merge(
+        df_insee_clean,
+        on="Code ville",
+        how="left"
+    )
+
+    # ------------------------
+    # 3. Monitoring qualité
+    # ------------------------
+    missing_rate = df_merged.isna().mean().mean()
+
+    print(f"[INFO] Merge INSEE terminé. Taux moyen de valeurs manquantes INSEE : {missing_rate:.2%}")
+
+    return df_merged
 
 # ------------------------------------------------------------
-# 5. Drop multicolinéarité
+# 6. Drop multicolinéarité
 # ------------------------------------------------------------
 
 def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
@@ -211,35 +267,33 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 # ------------------------------------------------------------
-# 6. Pipeline complet (à appeler depuis train.py)
+# 7. Pipeline complet (à appeler depuis train.py)
 # ------------------------------------------------------------
 
-def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux):
+def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
     """
-    Enchaîne :
-    1. Ajout GPS
-    2. Gare la plus proche
-    3. Relative years (signature & ouverture)
-    4. Ajout des taux d’intérêt (lookup YoY)
-    5. Nettoyage (drop multicolinéarité)
-
-    RETURN → df_final prêt pour modèle
+    Pipeline complet d'enrichissement des transactions DVF.
     """
 
     print("📍 Ajout des coordonnées GPS...")
-    df1 = add_gps_coordinates(df_dvf, df_ban)
+    df = add_gps_coordinates(df_dvf, df_ban)
 
     print("🚉 Calcul de la gare la plus proche...")
-    df2 = find_nearest_station(df1, df_gares)
+    df = find_nearest_station(df, df_gares)
 
-    print("⏳ Ajout des relative years (signature / ouverture)...")
-    df3 = compute_relative_years(df2)
+    print("📅 Ajout des relative years (signature / ouverture)...")
+    df = compute_relative_years(df)
 
-    print("📈 Ajout du taux moyen (lookup sur l'année)...")
-    df4 = add_interest_rate(df3, df_taux)
+    print("📈 Ajout du taux moyen (lookup sur année & mois)...")
+    df = add_interest_rate(df, df_taux)
+
+    print("🏙️ Ajout des données socio-éco INSEE...")
+    df = add_insee_features(df, df_insee)
 
     print("🧹 Drop multicolinéarité...")
-    df5 = drop_multicollinearity(df4)
+    df = drop_multicollinearity(df)
 
     print("✅ Feature engineering terminé.")
-    return df5
+    return df
+
+
