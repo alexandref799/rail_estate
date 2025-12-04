@@ -201,51 +201,45 @@ def add_interest_rate(df_dvf: pd.DataFrame, df_taux: pd.DataFrame) -> pd.DataFra
 def add_insee_features(df_dvf: pd.DataFrame, df_insee: pd.DataFrame) -> pd.DataFrame:
     """
     Ajoute les features INSEE (revenus, démographie, logement, etc.)
-    à df_dvf_clean via la colonne 'Code ville'.
-
-    PARAMÈTRES
-    ----------
-    df_dvf : pd.DataFrame
-        DataFrame DVF contenant la colonne 'Code ville'
-    df_insee : pd.DataFrame
-        DataFrame INSEE contenant les colonnes :
-        - 'Code ville'
-        - toutes les features socio-éco
-
-    RETOUR
-    ------
-    pd.DataFrame enrichi avec toutes les colonnes INSEE
+    au df_dvf via la colonne 'Code ville'.
     """
 
-    # ------------------------
-    # 1. Sécurités
-    # ------------------------
+    # ======================================================
+    # 1. Vérifications de sécurité
+    # ======================================================
     if "Code ville" not in df_dvf.columns:
         raise KeyError("df_dvf must contain a column named 'Code ville'.")
 
     if "Code ville" not in df_insee.columns:
         raise KeyError("df_insee must contain a column named 'Code ville'.")
 
-    # On retire d'éventuels doublons côté INSEE
+    # ======================================================
+    # 2. Préparation des données INSEE
+    # ======================================================
+
+    # Supprime les doublons INSEE
     df_insee_clean = df_insee.drop_duplicates(subset=["Code ville"]).copy()
 
-    # On force les colonnes en string pour un merge propre
-    df_dvf["Code ville"] = df_dvf["Code ville"].astype(str)
+    # Harmonisation des types pour le merge
+    df_dvf_clean = df_dvf.copy()
+    df_dvf_clean["Code ville"] = df_dvf_clean["Code ville"].astype(str)
     df_insee_clean["Code ville"] = df_insee_clean["Code ville"].astype(str)
 
-    # ------------------------
-    # 2. Merge LEFT (on garde toutes les transactions)
-    # ------------------------
-    df_merged = df_dvf.merge(
+    # ======================================================
+    # 3. Merge LEFT — on garde toutes les transactions DVF
+    # ======================================================
+    df_merged = df_dvf_clean.merge(
         df_insee_clean,
         on="Code ville",
         how="left"
     )
 
-    # ------------------------
-    # 3. Monitoring qualité
-    # ------------------------
-    missing_rate = df_merged.isna().mean().mean()
+    # ======================================================
+    # 4. Monitoring qualité
+    # ======================================================
+    # On exclut 'Code ville' du calcul
+    insee_cols = df_insee_clean.columns.drop("Code ville")
+    missing_rate = df_merged[insee_cols].isna().mean().mean()
 
     print(f"[INFO] Merge INSEE terminé. Taux moyen de valeurs manquantes INSEE : {missing_rate:.2%}")
 
@@ -261,7 +255,7 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     ['Date mutation', 'Valeur fonciere']
     """
 
-    cols_to_drop = ["Date mutation", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening']
+    cols_to_drop = ["Date mutation", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening','Département','Ville', "Code ville"]
     df_clean = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
 
     return df_clean
@@ -295,5 +289,4 @@ def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
 
     print("✅ Feature engineering terminé.")
     return df
-
 
