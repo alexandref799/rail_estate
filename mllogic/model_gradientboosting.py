@@ -61,7 +61,7 @@ def search_gbregressor(
     y_pred = best_model.predict(X_test)
 
     mae = mean_absolute_error(y_test, y_pred)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)  # sqrt(MSE)
+    rmse = mean_squared_error(y_test, y_pred)  # sqrt(MSE)
     r2 = r2_score(y_test, y_pred)
 
     results_model = {"mae": mae, "rmse": rmse, "r2": r2}
