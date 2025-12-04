@@ -86,6 +86,7 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
 
     ## Extract year
     df["annee"] = df["Date mutation"].dt.year
+    df['mois']= df["Date mutation"].dt.month
 
     # Filter residential properties only
     allowed_local_types = ["Appartement", "Maison"]
@@ -111,6 +112,7 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     cols_to_keep = [
     "Date mutation",
     "annee",
+    "mois",
     "Nature mutation",
     "Type local",
     "Valeur fonciere",
