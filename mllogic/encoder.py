@@ -13,7 +13,6 @@ num_cols = [
     "distance_gare_km",
     "relative_signature",
     "relative_opening",
-    "taux"
 ]
 
 # ----- Définition du préprocesseur -----
@@ -30,7 +29,7 @@ preprocessor = ColumnTransformer(
         ),
         # robust scaler pour les colonnes numériques
         ("num", RobustScaler(), num_cols),
-        ("minmax", MinMaxScaler(), ['annee'])
+        ("minmax", MinMaxScaler(), ['annee', 'taux', 'variation_mom', 'variation_yoy'])
     ]
 )
 
@@ -46,10 +45,7 @@ def preprocess_df(df: pd.DataFrame):
     """Applique label encoding + robust scaler comme dans ton Excel."""
     X_trans = preprocessor.fit_transform(df)
     # On récupère un DataFrame propre avec les mêmes noms de colonnes
-    cols_out = cat_cols + num_cols + ['annee']
+    cols_out = cat_cols + num_cols + ['annee'] + ['taux'] + ['variation_mom'] + ['variation_yoy']
     df_trans = pd.DataFrame(X_trans, columns=cols_out, index=df.index)
     return df_trans
 
-
-# Exemple :
-#df_prep = preprocess_df(df)
