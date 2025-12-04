@@ -1,7 +1,5 @@
 
 import pandas as pd
-import glob
-import unicodedata
 
 def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
 
@@ -9,7 +7,7 @@ def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
     df_ban_clean = df[cols_to_keep]
 
     return df_ban_clean
-
+    
 def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean raw data by
@@ -84,9 +82,9 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
         errors="coerce"
     )
 
-    ## Extract year
+    ## Extract columns
     df["annee"] = df["Date mutation"].dt.year
-    df['mois']= df["Date mutation"].dt.month
+    df['mois'] = df["Date mutation"].dt.month
 
     # Filter residential properties only
     allowed_local_types = ["Appartement", "Maison"]
