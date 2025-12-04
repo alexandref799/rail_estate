@@ -18,10 +18,12 @@ df_ban_clean = clean_data_ban(df_ban)
 df_gare_merge_clean = assemble_dataframes(df_gare_clean,df_metro_clean)
 
 # Feature engineering
-df_merge = run_feature_engineering(df_dvf_clean, df_gare_merge_clean, df_ban_clean)
+df_merge_with_all_gare = run_feature_engineering(df_dvf_clean, df_gare_merge_clean, df_ban_clean)
+df_merge_with_new_gare = run_feature_engineering(df_dvf_clean, df_gare_clean, df_ban_clean)
 
-# Test train split
-X_train, X_test, y_train, y_test = train_test_split_strict_chrono(df_merge, date_col="annee", min_year=2014, max_year=2018, test_size = 0.2)
+
+# Test train split Machine Learning
+X_train, X_test, y_train, y_test = train_test_split_strict_chrono(df_merge_with_new_gare, date_col="annee", min_year=2014, max_year=2018, test_size = 0.2)
 
 # Encoding & preprocessing
 X_train_encoded = preprocess_df(X_train)
