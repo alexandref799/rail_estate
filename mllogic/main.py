@@ -7,17 +7,23 @@ from encoder import preprocess_df
 from model_xgbregressor import search_xgbregressor
 from model_randomforest import search_model_randomforestregressor
 from model_gradientboosting import search_gbregressor
+from scipy.stats import randint, uniform
 
 '''
-model_name = [xgb_]'''
-def train(model_name, all_gares):
+model_name = [xgb_]
+'''
 
+def load_all():
     # Import data
     df_dvf, df_gare = load_dvf_gare(bucket_name='rail-estate-data', uri_dvf= 'dvf/dvf_idf_2014_2025.csv', uri_gare = 'gares/csv_gares.csv')
     df_ban = load_ban(bucket_name='rail-estate-data', prefix_ban='ban/')
     df_taux = _load_single_csv(bucket_name='rail-estate-data', uri_file='taux/data_taux.csv') #déjà clean
     df_insee = _load_single_csv(bucket_name="rail-estate-data", uri_file="insee/data_insee.csv") #déjà clean
 
+    return df_dvf, df_gare, df_ban, df_taux, df_insee
+
+def train(df_dvf, df_ban, df_gare, model_name, all_gares):
+    
     # Clean data
     df_dvf_clean = clean_data_transactions(df_dvf)
     df_ban_clean = clean_data_ban(df_ban)
@@ -44,14 +50,25 @@ def train(model_name, all_gares):
     X_train_encoded = preprocess_df(X_train)
     X_test_encoded = preprocess_df(X_test)
 
+    params_to_try = {
+        "n_estimators": randint(200, 800),
+        "max_depth": randint(4, 20),
+        "min_samples_split": randint(2, 20),
+        "min_samples_leaf": randint(1, 10),
+        "max_features": ["sqrt", "log2", None],
+        "bootstrap": [True, False]
+}
+
+    
     # Model
     if model_name == 'ml-xgb':
         best_model, results_model, best_params, y_pred = search_xgbregressor(X_train_encoded, X_test_encoded, y_train, y_test,
-                                                                                           n_estimators= [500], learning_rate=[0.05], max_depth= [8], subsample = [0.7], colsample= [0.8])
+                                                                                n_estimators= params_to_try['n_estimators'], learning_rate=params_to_try['learning_rate'], max_depth=params_to_try['max_depth'], subsample = params_to_try['subsample'], colsample_bytree= params_to_try['colsample_bytree'], early_stopping_rounds=50)
     elif model_name == 'ml_rfr':
-        best_model, results_model, best_params, y_pred = search_xgbregressor(X_train_encoded, X_test_encoded, y_train, y_test,
-                                                                                           n_estimators= [500], learning_rate=[0.05], max_depth= [8], subsample = [0.7], colsample= [0.8])
+        best_model, results_model, best_params, y_pred = search_model_randomforestregressor(X_train_encoded, X_test_encoded, y_train, y_test,
+                                                                                n_estimators= [500], learning_rate=[0.05], max_depth= [8], subsample = [0.7], colsample= [0.8])
     elif model_name == 'ml_gbr':
-        best_model, results_model, best_params, y_pred = search_gbregressor(X_train_encoded, X_test_encoded, y_train, y_test, n_estimators=[200], learning_rate=[0.1], max_depth=[5], subsample=[0.7], colsample=[0.8], random_state=42, n_iter=50, cv=5)
+        best_model, results_model, best_params, y_pred = search_gbregressor(X_train_encoded, X_test_encoded, y_train, y_test, 
+                                                                                n_estimators=[200], learning_rate=[0.1], max_depth=[5], subsample=[0.7], colsample=[0.8], random_state=42, n_iter=50, cv=5)
 
     return best_model, results_model, best_params, y_pred
