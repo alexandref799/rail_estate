@@ -18,7 +18,7 @@ def _ensure_directories():
 
 # )
 
-def save_results(params: dict, metrics: dict) -> None:
+def save_results(params: dict, metrics: dict, model_type : str) -> None:
 
     _ensure_directories()
 
@@ -26,14 +26,14 @@ def save_results(params: dict, metrics: dict) -> None:
     timestamp = time.strftime("%Y%m%d")
 
     if params is not None:
-        params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", "_XGB_" +"R2" + " " + str(metrics["r2"]) + timestamp   + ".pickle")
+        params_path = os.path.join(LOCAL_REGISTRY_PATH, "params_", model_type +"_R2" + " " + str(metrics["r2"]) + timestamp   + ".pickle")
         with open(params_path, "wb") as file:
             pickle.dump(params, file)
 
         # Save metrics locally
 
     if metrics is not None:
-        metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", "_XGB_" "R2_" + " " + str(metrics["r2"]) + timestamp  + ".pickle")
+        metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics_", model_type + "_R2_" + " " + str(metrics["r2"]) + timestamp  + ".pickle")
         with open(metrics_path, "wb") as file:
             pickle.dump(metrics, file)
 
