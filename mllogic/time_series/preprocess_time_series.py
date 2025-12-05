@@ -22,7 +22,7 @@ colonnes_categorielles = ['Nature mutation', 'Type local']
 TARGET_COLUMN = 'prix_m2' # La colonne que le LSTM va prédire
 TIME_STEPS = 6            # Nombre de mois passés à utiliser pour la prédiction
 
-def group_by(df:pd.Dataframe):
+def group_by(df:pd.DataFrame):
 
     df['date'] = pd.to_datetime(df['date'])
     df['Annee_Mois'] = df[colonne_date].dt.to_period('M')
