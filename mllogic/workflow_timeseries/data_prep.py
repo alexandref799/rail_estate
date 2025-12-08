@@ -132,3 +132,83 @@ def prepare_data(cfg: Config, gare: str):
         "df_test": df_test,
         "preprocessor": preprocessor,
     }
+
+
+# ============================================================
+# Multi-gares preparation (df already provided)
+# ============================================================
+
+def _create_sequences_by_gare(df: pd.DataFrame, X: np.ndarray, y: np.ndarray, gare_col: str, n_steps: int):
+    """Create sequences per gare to avoid mixing time series across gares."""
+    Xs, ys = [], []
+    for gare_value in df[gare_col].unique():
+        mask = df[gare_col] == gare_value
+        Xg = X[mask]
+        yg = y[mask]
+        for i in range(len(Xg) - n_steps):
+            Xs.append(Xg[i : i + n_steps])
+            ys.append(yg[i + n_steps])
+    return np.array(Xs), np.array(ys)
+
+
+def prepare_data_multi(
+    cfg: Config,
+    df_all: pd.DataFrame,
+    gare_mode: str = "all",  # "all", "new", "old"
+):
+    """
+    Prépare les données pour plusieurs gares à la fois (df déjà fourni).
+    gare_mode:
+        - "all" : toutes les gares
+        - "new" : is_new_gare == 1
+        - "old" : is_new_gare == 0
+    """
+    df = df_all.copy()
+
+    if gare_mode == "new":
+        df = df[df.get("is_new_gare", 0) == 1]
+    elif gare_mode == "old":
+        df = df[df.get("is_new_gare", 0) == 0]
+
+    df = df.sort_index()
+
+    categorical_features = [cfg.colonne_gare]
+    share_features = [f"{col}_share" for col in cfg.colonnes_categorielles]
+    numerical_features = (
+        [
+            col
+            for col in df.columns
+            if col not in share_features + categorical_features + [cfg.target]
+        ]
+        + share_features
+    )
+    numerical_features = list(dict.fromkeys(numerical_features))
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", MinMaxScaler(), numerical_features),
+            (
+                "cat",
+                OneHotEncoder(
+                    sparse_output=False, drop="if_binary", handle_unknown="ignore"
+                ),
+                categorical_features,
+            ),
+        ]
+    )
+
+    X_all = preprocessor.fit_transform(df)
+    y_scaler = MinMaxScaler()
+    y_all = y_scaler.fit_transform(df[[cfg.target]])
+
+    X_seq, y_seq = _create_sequences_by_gare(
+        df, X_all, y_all, gare_col=cfg.colonne_gare, n_steps=cfg.n_steps
+    )
+
+    return {
+        "X_seq": X_seq,
+        "y_seq": y_seq,
+        "y_scaler": y_scaler,
+        "preprocessor": preprocessor,
+        "df_filtered": df,
+    }
