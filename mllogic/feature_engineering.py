@@ -110,12 +110,26 @@ def find_nearest_station(df_dvf_gps: pd.DataFrame, df_gares: pd.DataFrame) -> pd
     df_dvf_gps["nearest_gare"] = df_gares.iloc[idx.flatten()]["nom_gare"].values
 
     # Merge infos gares
+    # Colonnes additionnelles à récupérer si disponibles
+    extra_cols = []
+    for col in ["latitude", "longitude", "ligne", "departement"]:
+        if col in df_gares.columns:
+            extra_cols.append(col)
+
+    merge_cols = ["nom_gare", "date_signature", "date_ouverture"] + extra_cols
+
     df_dvf_gps_gare = df_dvf_gps.merge(
-        df_gares[["nom_gare", "date_signature", "date_ouverture"]],
+        df_gares[merge_cols],
         left_on="nearest_gare",
         right_on="nom_gare",
         how="left"
-    ).drop(columns=["nom_gare"])
+    )
+
+    # Renommer pour clarté
+    if "latitude" in df_dvf_gps_gare.columns:
+        df_dvf_gps_gare = df_dvf_gps_gare.rename(columns={"latitude": "lat_gare"})
+    if "longitude" in df_dvf_gps_gare.columns:
+        df_dvf_gps_gare = df_dvf_gps_gare.rename(columns={"longitude": "lon_gare"})
 
     return df_dvf_gps_gare
 
@@ -138,6 +152,22 @@ def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
     df_dvf_gps_gare["relative_opening"] = df_dvf_gps_gare["annee"] - df_dvf_gps_gare["year_opening"]
 
     return df_dvf_gps_gare
+
+# ------------------------------------------------------------
+# 4bis. Flag nouvelles gares
+# ------------------------------------------------------------
+
+def add_is_new_gare(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute une colonne binaire 'is_new_gare' quand
+    relative_opening <= 5 et distance_gare_km < 1.
+    """
+    df = df.copy()
+    if {"relative_opening", "distance_gare_km"}.issubset(df.columns):
+        df["is_new_gare"] = (
+            (df["relative_opening"] <= 5) & (df["distance_gare_km"] < 1)
+        ).astype(int)
+    return df
 
 # ------------------------------------------------------------
 # 4. Ajout des taux d'intérêts moyen
@@ -254,8 +284,14 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     Supprime les colonnes redondantes :
     ['Date mutation', 'Valeur fonciere']
     """
-
-    cols_to_drop = ["Date mutation", "Valeur fonciere", 'nearest_gare','date_signature','date_ouverture','year_signature','year_opening','Département','Ville', "Code ville"]
+    # Conserver nearest_gare, lat_gare, lon_gare, ligne, departement, is_new_gare
+    cols_to_drop = [
+        "Date mutation",
+        "Valeur fonciere",
+        "Département",
+        "Ville",
+        "Code ville",
+    ]
     df_clean = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
 
     return df_clean
@@ -278,6 +314,9 @@ def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
     print("📅 Ajout des relative years (signature / ouverture)...")
     df = compute_relative_years(df)
 
+    print("🆕 Ajout du flag is_new_gare...")
+    df = add_is_new_gare(df)
+
     print("📈 Ajout du taux moyen (lookup sur année & mois)...")
     df = add_interest_rate(df, df_taux)
 
@@ -289,4 +328,3 @@ def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
 
     print("✅ Feature engineering terminé.")
     return df
-

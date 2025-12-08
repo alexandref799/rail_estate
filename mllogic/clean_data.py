@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
@@ -7,7 +6,7 @@ def clean_data_ban(df: pd.DataFrame) -> pd.DataFrame:
     df_ban_clean = df[cols_to_keep]
 
     return df_ban_clean
-    
+
 def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean raw data by
@@ -105,7 +104,8 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
 
     ## Remove abnormal price/m²
     df = df[df["prix_m2"] > 1000]       # avoid garages
-    df = df[df["prix_m2"] < 12500]     # avoid aberrations
+    df = df[df["prix_m2"] < 13000]     # avoid aberrations
+
 
     # --- Harmonisation "Commune" en lowercase ---
     df["Commune"] = df["Commune"].astype(str).str.lower().str.strip()
@@ -120,9 +120,6 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- Création du Code ville ---
     df["Code ville"] = df["Code departement"] + df["Code commune"]
-
-    # --- On affiche la nouvelle colonne ---
-    print(df["Code ville"].head())
 
     cols_to_keep = [
     "Date mutation",
