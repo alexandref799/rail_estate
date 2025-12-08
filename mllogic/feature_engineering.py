@@ -154,6 +154,22 @@ def compute_relative_years(df_dvf_gps_gare: pd.DataFrame) -> pd.DataFrame:
     return df_dvf_gps_gare
 
 # ------------------------------------------------------------
+# 4bis. Flag nouvelles gares
+# ------------------------------------------------------------
+
+def add_is_new_gare(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute une colonne binaire 'is_new_gare' quand
+    relative_opening <= 5 et distance_gare_km < 1.
+    """
+    df = df.copy()
+    if {"relative_opening", "distance_gare_km"}.issubset(df.columns):
+        df["is_new_gare"] = (
+            (df["relative_opening"] <= 5) & (df["distance_gare_km"] < 1)
+        ).astype(int)
+    return df
+
+# ------------------------------------------------------------
 # 4. Ajout des taux d'intérêts moyen
 # ------------------------------------------------------------
 
@@ -268,7 +284,7 @@ def drop_multicollinearity(df: pd.DataFrame) -> pd.DataFrame:
     Supprime les colonnes redondantes :
     ['Date mutation', 'Valeur fonciere']
     """
-    # Conserver nearest_gare, lat_gare, lon_gare, ligne, departement
+    # Conserver nearest_gare, lat_gare, lon_gare, ligne, departement, is_new_gare
     cols_to_drop = [
         "Date mutation",
         "Valeur fonciere",
@@ -297,6 +313,9 @@ def run_feature_engineering(df_dvf, df_gares, df_ban, df_taux, df_insee):
 
     print("📅 Ajout des relative years (signature / ouverture)...")
     df = compute_relative_years(df)
+
+    print("🆕 Ajout du flag is_new_gare...")
+    df = add_is_new_gare(df)
 
     print("📈 Ajout du taux moyen (lookup sur année & mois)...")
     df = add_interest_rate(df, df_taux)
