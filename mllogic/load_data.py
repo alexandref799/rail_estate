@@ -126,3 +126,27 @@ def load_dvf_gare(
 
 
     return df_dvf, df_gare
+
+
+
+def _load_single_csv_clean(bucket_name: str, uri_file: str) -> pd.DataFrame:
+    """
+    Fonction interne pour charger un fichier CSV unique depuis GCS.
+    Elle gère la connexion, la lecture, et les erreurs.
+    """
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(uri_file)
+
+
+        # Ouvre le blob comme un fichier en mémoire et le passe à pandas
+        with blob.open("rb") as f:
+            df = pd.read_csv(f)
+
+        print(f"✅ Fichier chargé : {uri_file} ({len(df):,} lignes)")
+        return df
+
+    except Exception as e:
+        print(f"❌ ERREUR de chargement pour {uri_file}: {e}")
+        # Retourne un DataFrame vide en cas d'échec pour ne pas bloquer le reste
+        return pd.DataFrame()

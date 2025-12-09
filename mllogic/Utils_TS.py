@@ -1,4 +1,9 @@
-
+import pandas as pd
+from dataclasses import dataclass
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List
+import numpy as np
 
 def group_by(
     df: pd.DataFrame,
@@ -52,51 +57,7 @@ def group_by(
     return df_agg[colonnes_a_garder].dropna()
 
 
-def split_train_test(
-    df: pd.DataFrame,
-    cfg: Config,
-    test_start: str | pd.Timestamp | None = None,
-    test_end: str | pd.Timestamp | None = None,
-):
-    """
-    Split a single-gare dataframe into train/test.
 
-    If test_start/test_end are provided:
-      - train: rows strictly before test_start
-      - test : rows between [test_start, test_end] inclusive
-    Otherwise, fallback to legacy split (last forecast_horizon rows as test).
-    """
-    df = df.copy()
-
-    # Ensure datetime index
-    if not isinstance(df.index, pd.DatetimeIndex):
-        if cfg.colonne_date in df.columns:
-            df[cfg.colonne_date] = pd.to_datetime(df[cfg.colonne_date])
-            df = df.set_index(cfg.colonne_date)
-        else:
-            raise ValueError("No datetime index and no colonne_date column to convert.")
-    df = df.sort_index()
-
-    if test_start is None or test_end is None:
-        if len(df) <= cfg.forecast_horizon:
-            raise ValueError("Not enough rows for this gare to create a test set.")
-        df_train = df.iloc[: -cfg.forecast_horizon]
-        df_test = df.iloc[-cfg.forecast_horizon :]
-        return df_train, df_test
-
-    test_start = pd.to_datetime(test_start)
-    test_end = pd.to_datetime(test_end)
-
-    train_mask = df.index < test_start
-    test_mask = (df.index >= test_start) & (df.index <= test_end)
-
-    df_train = df.loc[train_mask]
-    df_test = df.loc[test_mask]
-
-    if df_train.empty or df_test.empty:
-        raise ValueError("One of the splits is empty; adjust test_start/test_end.")
-
-    return df_train, df_test
 
 
 def create_sequences(X, y=None, n_steps=12):
@@ -188,3 +149,50 @@ class Config:
     # Outputs
     models_dir: Path = Path("mllogic/models")
     outputs_dir: Path = Path("mllogic/outputs")
+
+
+def split_train_test(
+    df: pd.DataFrame,
+    cfg: Config,
+    test_start: str | pd.Timestamp | None = None,
+    test_end: str | pd.Timestamp | None = None,
+):
+    """
+    Split a single-gare dataframe into train/test.
+
+    If test_start/test_end are provided:
+      - train: rows strictly before test_start
+      - test : rows between [test_start, test_end] inclusive
+    Otherwise, fallback to legacy split (last forecast_horizon rows as test).
+    """
+    df = df.copy()
+
+    # Ensure datetime index
+    if not isinstance(df.index, pd.DatetimeIndex):
+        if cfg.colonne_date in df.columns:
+            df[cfg.colonne_date] = pd.to_datetime(df[cfg.colonne_date])
+            df = df.set_index(cfg.colonne_date)
+        else:
+            raise ValueError("No datetime index and no colonne_date column to convert.")
+    df = df.sort_index()
+
+    if test_start is None or test_end is None:
+        if len(df) <= cfg.forecast_horizon:
+            raise ValueError("Not enough rows for this gare to create a test set.")
+        df_train = df.iloc[: -cfg.forecast_horizon]
+        df_test = df.iloc[-cfg.forecast_horizon :]
+        return df_train, df_test
+
+    test_start = pd.to_datetime(test_start)
+    test_end = pd.to_datetime(test_end)
+
+    train_mask = df.index < test_start
+    test_mask = (df.index >= test_start) & (df.index <= test_end)
+
+    df_train = df.loc[train_mask]
+    df_test = df.loc[test_mask]
+
+    if df_train.empty or df_test.empty:
+        raise ValueError(f"Train size= {len(df_train)}, Test size={len(df_test)} One of the splits is empty; adjust test_start/test_end.")
+
+    return df_train, df_test
