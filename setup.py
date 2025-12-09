@@ -28,7 +28,7 @@ except FileNotFoundError:
 
 
 setup(
-    name='rail-estate',
+    name='projet_rail_estate',
     version="0.1.0",
     description="Modèle prédictif immobilier axé sur l'impact ferroviaire.",
     # Ajout d'une description longue pour PyPI

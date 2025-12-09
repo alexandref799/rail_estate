@@ -17,3 +17,12 @@ gcsfs # Permet à Pandas/Dask de lire nativement les URIs gs://
 # --- Utilitaires de Projet (Optionnel mais très utile) ---
 python-dotenv # Pour lire votre fichier .env (BUCKET_NAME, URI_DVF, etc.)
 tqdm # Pour les barres de progression lors des boucles/chargements lourds
+
+# --- API ---
+fastapi
+uvicorn
+joblib
+
+# --- Site ---
+streamlit
+requests

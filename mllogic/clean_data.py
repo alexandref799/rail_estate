@@ -96,7 +96,7 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     #Remove anomalies
     df = df[df["Valeur fonciere"] > 1000]  # eliminate invalid values
     df = df[df["Surface reelle bati"] > 8]  # eliminate caves / erreurs
-    df = df[df["Surface reelle bati"] < 300]  # remove mansions / errors
+    df = df[df["Surface reelle bati"] < 200]  # remove mansions / errors
     df = df[df['Nombre pieces principales'] < 10]  # remove human errors
 
     ## Create price/m2
@@ -105,6 +105,7 @@ def clean_data_transactions(df: pd.DataFrame) -> pd.DataFrame:
     ## Remove abnormal price/m²
     df = df[df["prix_m2"] > 1000]       # avoid garages
     df = df[df["prix_m2"] < 13000]     # avoid aberrations
+
 
     # --- Harmonisation "Commune" en lowercase ---
     df["Commune"] = df["Commune"].astype(str).str.lower().str.strip()
@@ -206,3 +207,5 @@ def clean_data_gares(df: pd.DataFrame) -> pd.DataFrame:
     df_gares_clean = df_gares[colonnes_finales].copy()
 
     return df_gares_clean
+
+
