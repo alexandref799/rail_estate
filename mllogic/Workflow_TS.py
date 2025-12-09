@@ -68,10 +68,11 @@ def compute_lstm(mode, nom_gare= "Issy", test_start='2022-01-01',test_end='2025-
 
     if mode == "1":
         print("enter only one gare")
-
-        df_gare = df_group[df_group['nom_gare']== nom_gare]
-        df_gare = df_gare.sort_index()
-        df_group = df_gare
+        print(len(df_group))
+        print(df_group['nom_gare'].unique())
+        df_group = df_group[df_group['nom_gare']== nom_gare]
+        df_group = df_group.sort_index()
+        print(len(df_group))
 
 
 
