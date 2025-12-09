@@ -1,5 +1,5 @@
 import pandas as pd
-from mllogic.Utils_TS import group_by,split_train_test,create_sequences,create_sequences_multi_horizon
+from mllogic.Utils_TS import group_by,split_train_test,create_sequences,create_sequences_multi_horizon,Config
 from sklearn.compose import ColumnTransformer
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.callbacks import EarlyStopping
@@ -74,8 +74,8 @@ X_test  = X_scaler.transform(df_test)
 
 y_scaler = MinMaxScaler()
 
-y_train = y_scaler.fit_transform(df_train[[target]])
-y_test  = y_scaler.transform(df_test[[target]])
+y_train = y_scaler.fit_transform(df_train[[TARGET_COLUMN]])
+y_test  = y_scaler.transform(df_test[[TARGET_COLUMN]])
 
 n_steps =12
 
