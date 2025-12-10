@@ -1,11 +1,11 @@
-streamlit
+streamlit[charts]
+
 requests
 numpy
 matplotlib
 pandas
 plotly
 geopandas
-
 
 
 
