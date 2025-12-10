@@ -87,6 +87,7 @@ def pred_selector(
     if min_transac is not None and "n_transactions" in df_group.columns:
         df_filtered = df_group[df_group["n_transactions"] >= float(min_transac)]
 
+    y = df_filtered['prix']
 
     end_date = pd.to_datetime(end_date)
     start_date = end_date -pd.DateOffset(months=n_steps+horizon)
@@ -102,7 +103,7 @@ def pred_selector(
     df_filtered = df_filtered.sort_index()
     df_pred = df_filtered.loc[(df_filtered.index >= start_date) & (df_filtered.index <= end_date)]
 
-    print(df_pred.columns)
+    
 
     scaler = joblib.load('scalers/scaler1.joblib')
 
@@ -136,4 +137,4 @@ def pred_selector(
 
     # df_forecast = plot_predictions()
 
-    return y_pred, y_true,
+    return y_pred, y_true,y
