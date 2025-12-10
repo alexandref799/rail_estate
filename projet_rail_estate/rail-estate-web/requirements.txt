@@ -3,7 +3,7 @@ requests
 numpy
 matplotlib
 pandas
-plotly
+plotly.express
+plotly.graph_objects
 geopandas
 json
-
