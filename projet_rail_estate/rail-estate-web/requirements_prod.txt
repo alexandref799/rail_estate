@@ -5,5 +5,7 @@ matplotlib
 pandas
 plotly
 geopandas
-json
+
+
+
 
